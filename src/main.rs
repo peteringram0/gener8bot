@@ -1,9 +1,28 @@
 mod me;
 mod auction_product;
 
+use clap::Parser;
 use auction_product::AuctionProduct;
 
+// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+   /// Name of the person to greet
+   #[clap(short, long, value_parser)]
+   token: String,
+
+   /// Number of times to greet
+   #[clap(short, long, value_parser)]
+   product_id: String,
+}
+
 fn main() {
+
+    let args = Args::parse();
+
+    println!("TOKEN .. {}", args.token);
+    println!("PRODUCT .. {}", args.product_id);
 
     // Read from CLI: auction_id and token
     // Store token on the heap (access from each files)
