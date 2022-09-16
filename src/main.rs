@@ -1,8 +1,9 @@
-mod me;
-mod auction_product;
+// mod me;
+mod product;
+mod settings;
+mod Me;
 
 use clap::Parser;
-use auction_product::AuctionProduct;
 
 // Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -20,23 +21,23 @@ struct Args {
 fn main() {
 
     let args = Args::parse();
+    let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
 
-    println!("TOKEN .. {}", args.token);
-    println!("PRODUCT .. {}", args.product_id);
-
-    // Read from CLI: auction_id and token
-    // Store token on the heap (access from each files)
-
-    let me = me::get_me();
+    let me = Me::Me::get(&settings);
     if me.is_err() {
         panic!("couldnt get me");
     }
     println!("{:?}", me);
 
-    let product = AuctionProduct::get_product_info("358c9934-302e-11ed-80c3-b3ff58f38caf");
+    let product = product::Product::get(&settings);
     if product.is_err() {
         panic!("couldnt get product");
     }
     println!("{:?}", product);
+
+    match product {
+        Ok(product) => product.snipe(),
+        Err(error) => println!("error {}", error)
+    }
 
 }

@@ -1,7 +1,8 @@
 use serde::{Serialize, Deserialize};
+use crate::settings::Settings;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MeAttributes {
+struct MeAttributes {
   balance: u64
 }
 
@@ -11,24 +12,27 @@ struct MeInner {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct MeWrapper {
+struct MeResponse {
   data: MeInner
 }
 
-#[tokio::main]
-pub async fn get_me() -> Result<MeAttributes, reqwest::Error> {
+#[derive(Debug)]
+pub struct Me {
+  balance: u64
+}
 
-  let token = "";
-  // let token = "";
+impl Me {
 
-  let client: MeWrapper = reqwest::Client::new()
-    .get("https://apollo.gener8ads.com/tokens/summary")
-    .bearer_auth(token)
-    .send()
-    .await?
-    .json()
-    .await?;
-
-  Ok(client.data.attributes)
+  #[tokio::main]
+  pub async fn get(settings: &Settings) -> Result<Me, reqwest::Error> {
+    let client: MeResponse = reqwest::Client::new()
+      .get(settings.url.to_owned() + "/tokens/summary")
+      .bearer_auth(&settings.token)
+      .send()
+      .await?
+      .json()
+      .await?;
+    Ok(Me{balance: client.data.attributes.balance})
+  }
 
 }
