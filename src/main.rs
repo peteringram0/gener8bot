@@ -1,6 +1,7 @@
 mod product;
 mod settings;
 mod me;
+mod snipe;
 
 use clap::Parser;
 
@@ -35,7 +36,7 @@ fn main() {
     println!("{:?}", product);
 
     match product {
-        Ok(product) => product.snipe(),
+        Ok(product) => snipe::snipe(product),
         Err(error) => println!("error {}", error)
     }
 

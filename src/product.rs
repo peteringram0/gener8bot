@@ -1,9 +1,5 @@
 use serde::{Serialize, Deserialize};
 use chrono::prelude::*;
-use std::borrow::Borrow;
-use std::str::FromStr;
-use std::thread::sleep;
-use std::time::Duration;
 
 use crate::settings::Settings;
 
@@ -41,6 +37,10 @@ struct AuctionProductResponse {
   data: AuctionProductData
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct BidResponse {
+}
+
 #[derive(Debug)]
 pub struct Product {
   active_users: u8,
@@ -75,16 +75,30 @@ impl Product {
     })
   }
 
-  pub fn snipe(&self) {
-    let snipe_time = (self.ends_at.time() - Utc::now().time())
-      .num_seconds() as u64;
-    println!("Will post bid in {} seconds", snipe_time);
-    sleep(Duration::from_secs(snipe_time));
-    self.bid();
-  }
-
-  fn bid(&self) {
-    !unimplemented!()
+  #[tokio::main]
+  async fn post_pid(&self, settings: &Settings, bid_amount: u16) -> Result<(), reqwest::Error> {
+    let resp = reqwest::Client::new()
+      .post(settings.url.to_owned() + "/marketplace/auctions/bids")
+      .bearer_auth(&settings.token)
+      .json(&serde_json::json!({
+        "data":{
+          "attributes":{
+            "amount": bid_amount
+          },
+          "relationships":{
+            "auction":{
+              "data":{
+                "type": "auctions",
+                "id": settings.product_id
+              }
+            }
+          },
+          "type": "bid"
+        }
+      }))
+      .send()
+      .await?;
+    Ok(())
   }
 
 }
@@ -122,15 +136,11 @@ mod tests {
             }));
     });
 
-    println!("url, {}", server.url(""));
-
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
 
-    let info = Product::get(&settings);
+    let _ = Product::get(&settings);
 
     mock.assert();
-
-    println!("HERE {:?}", info);
 
   }
 
