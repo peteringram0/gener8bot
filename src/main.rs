@@ -1,7 +1,6 @@
 mod mea;
 mod product;
 mod settings;
-// mod Me;
 
 use clap::Parser;
 
@@ -23,7 +22,7 @@ fn main() {
     let args = Args::parse();
     let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
 
-    let me = Me::Me::get(&settings);
+    let me = mea::Me::get(&settings);
     if me.is_err() {
         panic!("couldnt get me");
     }
