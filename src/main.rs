@@ -1,4 +1,4 @@
-mod me;
+mod mea;
 mod product;
 mod settings;
 // mod Me;
