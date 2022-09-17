@@ -1,7 +1,7 @@
-// mod me;
+mod me;
 mod product;
 mod settings;
-mod Me;
+// mod Me;
 
 use clap::Parser;
 
