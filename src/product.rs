@@ -38,21 +38,25 @@ struct AuctionProductResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct BidResponse {
-}
+struct BidResponse;
 
 #[derive(Debug)]
 pub struct Product {
   active_users: u8,
   bids_made: u32,
-  current_price: u64,
+  pub current_price: u64,
   starts_at: DateTime<Utc>,
-  ends_at: DateTime<Utc>,
+  pub ends_at: DateTime<Utc>,
   is_active: bool,
   is_complete: bool,
 }
 
 impl Product {
+
+  #[tokio::main]
+  pub async fn get_existing(&self, settings: &Settings) -> Result<Product, reqwest::Error> {
+    Product::get(settings)
+  }
 
   #[tokio::main]
   pub async fn get(settings: &Settings) -> Result<Product, reqwest::Error> {
@@ -76,14 +80,14 @@ impl Product {
   }
 
   #[tokio::main]
-  async fn post_pid(&self, settings: &Settings, bid_amount: u16) -> Result<(), reqwest::Error> {
+  pub async fn post_pid(&self, settings: &Settings) -> Result<(), reqwest::Error> {
     let resp = reqwest::Client::new()
       .post(settings.url.to_owned() + "/marketplace/auctions/bids")
       .bearer_auth(&settings.token)
       .json(&serde_json::json!({
         "data":{
           "attributes":{
-            "amount": bid_amount
+            "amount": self.current_price + 1
           },
           "relationships":{
             "auction":{
@@ -142,21 +146,6 @@ mod tests {
 
     mock.assert();
 
-  }
-
-  #[test]
-  fn snipe() {
-    let d = Product {
-      active_users: 0,
-      bids_made: 0,
-      current_price: 0,
-      starts_at: DateTime::parse_from_rfc3339("2022-09-15T19:51:49+00:00").unwrap().with_timezone(&Utc),
-      ends_at: Utc::now() + Duration::seconds(3),
-      is_active: true,
-      is_complete: false
-    };
-    d.snipe();
-    println!("snipe happened {} milliseconds before auction ended", d.ends_at.timestamp_millis() - Utc::now().timestamp_millis());
   }
 
 }

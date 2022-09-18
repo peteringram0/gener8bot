@@ -36,7 +36,7 @@ fn main() {
     println!("{:?}", product);
 
     match product {
-        Ok(product) => snipe::snipe(product),
+        Ok(product) => snipe::snipe(product, &settings, &me.unwrap()),
         Err(error) => println!("error {}", error)
     }
 

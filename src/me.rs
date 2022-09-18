@@ -18,7 +18,7 @@ struct MeResponse {
 
 #[derive(Debug)]
 pub struct Me {
-  balance: u64
+  pub balance: u64
 }
 
 impl Me {
