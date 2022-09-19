@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use chrono::prelude::*;
-
+use std::thread;
 use crate::settings::Settings;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -42,13 +42,13 @@ struct BidResponse;
 
 #[derive(Debug)]
 pub struct Product {
-  active_users: u8,
-  bids_made: u32,
+  // active_users: u8,
+  // bids_made: u32,
   pub current_price: u64,
-  starts_at: DateTime<Utc>,
+  // starts_at: DateTime<Utc>,
   pub ends_at: DateTime<Utc>,
-  is_active: bool,
-  is_complete: bool,
+  pub is_active: bool,
+  // is_complete: bool,
 }
 
 impl Product {
@@ -69,19 +69,19 @@ impl Product {
       .await?;
     println!("a: product {:?}", product);
     Ok(Product {
-      active_users: product.data.attributes.active_users,
-      bids_made: product.data.attributes.bids_made,
+      // active_users: product.data.attributes.active_users,
+      // bids_made: product.data.attributes.bids_made,
       current_price: product.data.attributes.current_price,
-      starts_at: DateTime::parse_from_rfc3339(&product.data.attributes.starts_at).unwrap().with_timezone(&Utc),
+      // starts_at: DateTime::parse_from_rfc3339(&product.data.attributes.starts_at).unwrap().with_timezone(&Utc),
       ends_at: DateTime::parse_from_rfc3339(&product.data.attributes.ends_at).unwrap().with_timezone(&Utc),
       is_active: product.data.attributes.is_active,
-      is_complete: product.data.attributes.is_complete,
+      // is_complete: product.data.attributes.is_complete,
     })
   }
 
   #[tokio::main]
   pub async fn post_pid(&self, settings: &Settings) -> Result<(), reqwest::Error> {
-    let resp = reqwest::Client::new()
+    reqwest::Client::new()
       .post(settings.url.to_owned() + "/marketplace/auctions/bids")
       .bearer_auth(&settings.token)
       .json(&serde_json::json!({

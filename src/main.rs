@@ -3,6 +3,8 @@ mod settings;
 mod me;
 mod snipe;
 
+use std::borrow::Borrow;
+
 use clap::Parser;
 
 // Simple program to greet a person
@@ -36,7 +38,12 @@ fn main() {
     println!("{:?}", product);
 
     match product {
-        Ok(product) => snipe::snipe(product, &settings, &me.unwrap()),
+        Ok(product) => {
+            if !product.is_active {
+                panic!("Product is not active")
+            }
+            snipe::snipe(product, &settings, &me.unwrap())
+        },
         Err(error) => println!("error {}", error)
     }
 

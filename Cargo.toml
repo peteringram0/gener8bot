@@ -2,8 +2,8 @@
 name = "gener8bot"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Peter Ingram <p.ingram@gmail.com>"]
+license-file = "LICENSE.txt"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -13,3 +13,10 @@ tokio = { version = "1", features = ["full"] }
 chrono = "0.4"
 clap = { version = "3.2.21", features = ["derive"] }
 httpmock = "0.6.6"
+colored = "2.0.0"
+
+[profile.release]
+opt-level = "z"     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+strip = true        # Automatically strip symbols from the binary.
