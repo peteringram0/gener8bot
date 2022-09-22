@@ -1,4 +1,4 @@
-use std::thread::sleep;
+use std::{thread::sleep};
 use std::time::Duration;
 use chrono::Utc;
 
@@ -15,10 +15,11 @@ pub async fn snipe(product: Product, settings: &Settings, me: &Me) {
   sleep(Duration::from_secs(snipe_time));
 
   // Check the products last price before sniping
-  let product_latest = product.get_existing(settings);
+  let product_latest = product.get_existing(settings).await;
   if product_latest.is_err() {
     panic!("Could not update the product before sniping")
   }
+
   let product_unwrapped = product_latest.unwrap();
 
   // Check we have enough points in our account to snipe the product
@@ -27,14 +28,14 @@ pub async fn snipe(product: Product, settings: &Settings, me: &Me) {
   }
 
   // Run the snipe
-  let bid = product_unwrapped.post_pid(settings);
+  let bid = product_unwrapped.post_pid(settings).await;
   if bid.is_err() {
     panic!("Could not snipe")
   }
 
 }
 
-
+#[cfg(test)]
 mod tests {
   use chrono::{Duration};
   use httpmock::prelude::*;
@@ -64,9 +65,7 @@ mod tests {
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
 
     let re_get_product = server.mock(|when, then| {
-      when.method(GET)
-        .path("/marketplace/auctions/");
-
+      when.method(GET);
       then.status(200)
         .header("content-type", "application/json")
           .json_body(json!({
@@ -75,7 +74,7 @@ mod tests {
                 "active-users": 0,
                 "bids-made": 0,
                 "current-price": 170,
-                "ends-at": Utc::now().to_string(),
+                "ends-at": Utc::now().to_rfc3339(),
                 "is-active": true,
                 "is-complete": false,
                 "starts-at": "2022-09-15T19:51:49+00:00"
@@ -87,7 +86,6 @@ mod tests {
     let post_bid = server.mock(|when, then| {
       when.method(POST)
         .path("/marketplace/auctions/bids");
-
       then.status(200)
         .header("content-type", "application/json");
     });

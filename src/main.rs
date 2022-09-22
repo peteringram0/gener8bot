@@ -3,8 +3,6 @@ mod settings;
 mod me;
 mod snipe;
 
-use std::borrow::Borrow;
-
 use clap::Parser;
 
 // Simple program to greet a person
@@ -20,7 +18,8 @@ struct Args {
    product_id: String,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
 
     let args = Args::parse();
     let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
@@ -31,7 +30,7 @@ fn main() {
     }
     println!("{:?}", me);
 
-    let product = product::Product::get(&settings);
+    let product = product::Product::get(&settings).await;
     if product.is_err() {
         panic!("couldnt get product");
     }
@@ -46,5 +45,18 @@ fn main() {
         },
         Err(error) => println!("error {}", error)
     }
+
+}
+
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn main_test() {
+    //
+  }
 
 }

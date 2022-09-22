@@ -1,6 +1,5 @@
 use serde::{Serialize, Deserialize};
 use chrono::prelude::*;
-use std::thread;
 use crate::settings::Settings;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,12 +52,27 @@ pub struct Product {
 
 impl Product {
 
-  #[tokio::main]
+  // #[tokio::main]
   pub async fn get_existing(&self, settings: &Settings) -> Result<Product, reqwest::Error> {
-    Product::get(settings)
+    let product: AuctionProductResponse = reqwest::Client::new()
+      .get(settings.url.to_owned() + "/marketplace/auctions/" + &settings.product_id)
+      .bearer_auth(&settings.token)
+      .send()
+      .await?
+      .json()
+      .await?;
+    Ok(Product {
+      // active_users: product.data.attributes.active_users,
+      // bids_made: product.data.attributes.bids_made,
+      current_price: product.data.attributes.current_price,
+      // starts_at: DateTime::parse_from_rfc3339(&product.data.attributes.starts_at).unwrap().with_timezone(&Utc),
+      ends_at: DateTime::parse_from_rfc3339(&product.data.attributes.ends_at).unwrap().with_timezone(&Utc),
+      is_active: product.data.attributes.is_active,
+      // is_complete: product.data.attributes.is_complete,
+    })
   }
 
-  #[tokio::main]
+  // #[tokio::main]
   pub async fn get(settings: &Settings) -> Result<Product, reqwest::Error> {
     let product: AuctionProductResponse = reqwest::Client::new()
       .get(settings.url.to_owned() + "/marketplace/auctions/" + &settings.product_id)
@@ -79,7 +93,8 @@ impl Product {
     })
   }
 
-  #[tokio::main]
+  #[allow(dead_code)]
+  // #[tokio::main]
   pub async fn post_pid(&self, settings: &Settings) -> Result<(), reqwest::Error> {
     reqwest::Client::new()
       .post(settings.url.to_owned() + "/marketplace/auctions/bids")
@@ -109,7 +124,6 @@ impl Product {
 
 #[cfg(test)]
 mod tests {
-  use chrono::{DateTime, Utc, Duration};
   use serde_json::json;
   use crate::{product::{Product}, settings::Settings};
   use httpmock::prelude::*;
