@@ -24,7 +24,7 @@ async fn main() {
     let args = Args::parse();
     let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
 
-    let me = me::Me::get(&settings);
+    let me = me::Me::get(&settings).await;
     if me.is_err() {
         panic!("couldnt get me");
     }
@@ -47,7 +47,6 @@ async fn main() {
     }
 
 }
-
 
 
 #[cfg(test)]

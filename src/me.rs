@@ -23,7 +23,6 @@ pub struct Me {
 
 impl Me {
 
-  #[tokio::main]
   pub async fn get(settings: &Settings) -> Result<Me, reqwest::Error> {
     let client: MeResponse = reqwest::Client::new()
       .get(settings.url.to_owned() + "/tokens/summary")

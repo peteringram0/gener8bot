@@ -46,23 +46,16 @@ mod tests {
   fn snipe_full_test() {
 
     let product = Product {
-      // active_users: 0,
-      // bids_made: 0,
       current_price: 150,
-      // starts_at: DateTime::parse_from_rfc3339("2022-09-15T19:51:49+00:00").unwrap().with_timezone(&Utc),
       ends_at: Utc::now() + Duration::seconds(3),
       is_active: true,
-      // is_complete: false
     };
 
     let me = Me {
       balance: 200
     };
 
-    // Start a lightweight mock server.
     let server = MockServer::start();
-
-    let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
 
     let re_get_product = server.mock(|when, then| {
       when.method(GET);
@@ -90,12 +83,14 @@ mod tests {
         .header("content-type", "application/json");
     });
 
+    let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
+
     snipe(product, &settings, &me);
 
     re_get_product.assert();
     post_bid.assert();
 
-    // TODO: bid should be 172
+    // TODO: bid should be 172 .. how to check this in the payload?
 
   }
 
