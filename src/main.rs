@@ -22,6 +22,7 @@ struct Args {
 async fn main() {
 
   let args = Args::parse();
+
   let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
 
   let me = me::get(&settings).await;
@@ -41,25 +42,9 @@ async fn main() {
       if !product.is_active {
         panic!("Product is not active")
       }
-      snipe::snipe(&settings, &me.unwrap())
+      snipe::snipe(&settings, &me.unwrap()).await
     },
     Err(error) => println!("error {}", error)
-  }
-
-}
-
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn main_test() {
-
-    // TODO: mock methods and return dud results
-
-    main()
-
   }
 
 }

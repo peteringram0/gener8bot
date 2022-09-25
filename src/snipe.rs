@@ -5,7 +5,7 @@ use colored::*;
 use crate::product::{self};
 use crate::{settings::Settings, me::Me};
 
-#[tokio::main]
+// #[tokio::main]
 pub async fn snipe(settings: &Settings, me: &Me) {
 
   // Check the products last price before sniping
@@ -33,25 +33,13 @@ pub async fn snipe(settings: &Settings, me: &Me) {
 
 #[cfg(test)]
 mod tests {
-  use chrono::{Duration, Utc};
+  use chrono::{Utc};
   use httpmock::prelude::*;
   use serde_json::json;
-  use crate::product::Product;
+  use super::*;
 
-use super::*;
-
-  #[test]
-  fn snipe_full_test() {
-
-    let product = Product {
-      current_price: 150,
-      ends_at: Utc::now() + Duration::seconds(3),
-      is_active: true,
-    };
-
-    let me = Me {
-      balance: 200
-    };
+  #[tokio::test]
+  async fn snipe_full_test() {
 
     let server = MockServer::start();
 
@@ -82,8 +70,9 @@ use super::*;
     });
 
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
+    let me = Me {balance: 200};
 
-    snipe(&settings, &me);
+    snipe(&settings, &me).await;
 
     re_get_product.assert();
     post_bid.assert();
@@ -91,5 +80,6 @@ use super::*;
     // TODO: bid should be 172 .. how to check this in the payload?
 
   }
+
 
 }
