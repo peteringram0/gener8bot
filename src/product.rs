@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 use chrono::prelude::*;
 use crate::settings::Settings;
+// use async_trait::async_trait;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AuctionProductAttributes {
@@ -47,62 +48,63 @@ pub struct Product {
 }
 
 impl Product {
-
-  pub async fn get(settings: &Settings) -> Result<Product, reqwest::Error> {
-    let product: AuctionProductResponse = reqwest::Client::new()
-      .get(settings.url.to_owned() + "/marketplace/auctions/" + &settings.product_id)
-      .bearer_auth(&settings.token)
-      .send()
-      .await?
-      .json()
-      .await?;
-    Ok(Product {
-      // active_users: product.data.attributes.active_users,
-      // bids_made: product.data.attributes.bids_made,
-      current_price: product.data.attributes.current_price,
-      // starts_at: DateTime::parse_from_rfc3339(&product.data.attributes.starts_at).unwrap().with_timezone(&Utc),
-      ends_at: DateTime::parse_from_rfc3339(&product.data.attributes.ends_at).unwrap().with_timezone(&Utc),
-      is_active: product.data.attributes.is_active,
-      // is_complete: product.data.attributes.is_complete,
-    })
+  pub fn seconds_until_finishes(&self) -> u64 {
+    (self.ends_at.time() - Utc::now().time())
+      .num_seconds() as u64
   }
+}
 
-  pub async fn get_existing(&self, settings: &Settings) -> Result<Product, reqwest::Error> {
-    Product::get(settings).await
-  }
+/**
+ * Get product
+ */
+pub async fn get(settings: &Settings) -> Result<Product, reqwest::Error> {
+  let product: AuctionProductResponse = reqwest::Client::new()
+    .get(settings.url.to_owned() + "/marketplace/auctions/" + &settings.product_id)
+    .bearer_auth(&settings.token)
+    .send()
+    .await?
+    .json()
+    .await?;
+  Ok(Product {
+    current_price: product.data.attributes.current_price,
+    ends_at: DateTime::parse_from_rfc3339(&product.data.attributes.ends_at).unwrap().with_timezone(&Utc),
+    is_active: product.data.attributes.is_active,
+  })
+}
 
-  pub async fn post_pid(&self, settings: &Settings) -> Result<(), reqwest::Error> {
-    reqwest::Client::new()
-      .post(settings.url.to_owned() + "/marketplace/auctions/bids")
-      .bearer_auth(&settings.token)
-      .json(&serde_json::json!({
-        "data":{
-          "attributes":{
-            "amount": self.current_price + 1
-          },
-          "relationships":{
-            "auction":{
-              "data":{
-                "type": "auctions",
-                "id": settings.product_id
-              }
+/**
+ * Post bid
+ */
+pub async fn post_bid(product: &Product, settings: &Settings) -> Result<(), reqwest::Error> {
+  reqwest::Client::new()
+    .post(settings.url.to_owned() + "/marketplace/auctions/bids")
+    .bearer_auth(&settings.token)
+    .json(&serde_json::json!({
+      "data":{
+        "attributes":{
+          "amount": product.current_price + 1
+        },
+        "relationships":{
+          "auction":{
+            "data":{
+              "type": "auctions",
+              "id": settings.product_id
             }
-          },
-          "type": "bid"
-        }
-      }))
-      .send()
-      .await?;
-    Ok(())
-  }
-
+          }
+        },
+        "type": "bid"
+      }
+    }))
+    .send()
+    .await?;
+  Ok(())
 }
 
 #[cfg(test)]
 mod tests {
   use serde_json::json;
-  use crate::{product::{Product}, settings::Settings};
   use httpmock::prelude::*;
+  use super::*;
 
   #[tokio::test]
   async fn get_info() {
@@ -128,7 +130,7 @@ mod tests {
 
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
 
-    let _ = Product::get(&settings).await;
+    let a = get(&settings).await;
 
     mock.assert();
 

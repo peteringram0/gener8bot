@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::settings::Settings;
+use crate::{settings::Settings, product::Product};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct MeAttributes {
@@ -22,16 +22,20 @@ pub struct Me {
 }
 
 impl Me {
-
-  pub async fn get(settings: &Settings) -> Result<Me, reqwest::Error> {
-    let client: MeResponse = reqwest::Client::new()
-      .get(settings.url.to_owned() + "/tokens/summary")
-      .bearer_auth(&settings.token)
-      .send()
-      .await?
-      .json()
-      .await?;
-    Ok(Me{balance: client.data.attributes.balance})
+  pub fn can_afford_product(&self, product: &Product) {
+    if product.current_price >= self.balance {
+      panic!("Sorry you didn't have enough points to snipe");
+    }
   }
+}
 
+pub async fn get(settings: &Settings) -> Result<Me, reqwest::Error> {
+  let client: MeResponse = reqwest::Client::new()
+    .get(settings.url.to_owned() + "/tokens/summary")
+    .bearer_auth(&settings.token)
+    .send()
+    .await?
+    .json()
+    .await?;
+  Ok(Me{balance: client.data.attributes.balance})
 }

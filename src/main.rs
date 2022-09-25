@@ -21,30 +21,30 @@ struct Args {
 #[tokio::main]
 async fn main() {
 
-    let args = Args::parse();
-    let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
+  let args = Args::parse();
+  let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
 
-    let me = me::Me::get(&settings).await;
-    if me.is_err() {
-        panic!("couldnt get me");
-    }
-    println!("{:?}", me);
+  let me = me::get(&settings).await;
+  if me.is_err() {
+    panic!("couldnt get me");
+  }
+  println!("{:?}", me);
 
-    let product = product::Product::get(&settings).await;
-    if product.is_err() {
-        panic!("couldnt get product");
-    }
-    println!("{:?}", product);
+  let product = product::get(&settings).await;
+  if product.is_err() {
+    panic!("couldnt get product");
+  }
+  println!("{:?}", product);
 
-    match product {
-        Ok(product) => {
-            if !product.is_active {
-                panic!("Product is not active")
-            }
-            snipe::snipe(product, &settings, &me.unwrap())
-        },
-        Err(error) => println!("error {}", error)
-    }
+  match product {
+    Ok(product) => {
+      if !product.is_active {
+        panic!("Product is not active")
+      }
+      snipe::snipe(&settings, &me.unwrap())
+    },
+    Err(error) => println!("error {}", error)
+  }
 
 }
 
@@ -55,7 +55,11 @@ mod tests {
 
   #[test]
   fn main_test() {
-    //
+
+    // TODO: mock methods and return dud results
+
+    main()
+
   }
 
 }
