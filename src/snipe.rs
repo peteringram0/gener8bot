@@ -5,7 +5,6 @@ use colored::*;
 use crate::product::{self};
 use crate::{settings::Settings, me::Me};
 
-// #[tokio::main]
 pub async fn snipe(settings: &Settings, me: &Me) {
 
   // Check the products last price before sniping

@@ -29,20 +29,20 @@ async fn main() {
   if me.is_err() {
     panic!("couldnt get me");
   }
-  println!("{:?}", me);
+  // println!("{:?}", me);
 
   let product = product::get(&settings).await;
   if product.is_err() {
     panic!("couldnt get product");
   }
-  println!("{:?}", product);
+  // println!("{:?}", product);
 
   match product {
     Ok(product) => {
       if !product.is_active {
         panic!("Product is not active")
       }
-      snipe::snipe(&settings, &me.unwrap()).await
+      snipe::snipe(&settings, &me.unwrap()).await // TODO: Maybe this will work without putting inside a task .... need a way to check
     },
     Err(error) => println!("error {}", error)
   }

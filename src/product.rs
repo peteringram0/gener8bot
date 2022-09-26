@@ -130,7 +130,7 @@ mod tests {
 
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
 
-    let a = get(&settings).await;
+    let _ = get(&settings).await;
 
     mock.assert();
 

@@ -2,7 +2,7 @@
 name = "gener8bot"
 version = "0.1.0"
 edition = "2021"
-authors = ["Peter Ingram <p.ingram@gmail.com>"]
+authors = ["Peter Ingram <peter.ingram0@gmail.com>"]
 license-file = "LICENSE.txt"
 
 [dependencies]
