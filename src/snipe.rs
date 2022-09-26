@@ -19,9 +19,6 @@ pub async fn snipe(settings: &Settings, me: &Me) {
   println!("{} {} {}", "Will post bid in".red(), snipe_time.to_string().red().bold(), "seconds".red());
   sleep(Duration::from_secs(snipe_time));
 
-  // Check we can afford the product
-  me.can_afford_product(&product_unwrapped);
-
   // Run the snipe
   let bid = product::post_bid(&product_unwrapped, settings).await;
   if bid.is_err() {

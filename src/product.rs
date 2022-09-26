@@ -114,7 +114,8 @@ mod tests {
 
     // Create a mock on the server.
     let mock = server.mock(|when, then| {
-        when.method(GET);
+        when.method(GET)
+          .path("/marketplace/auctions/product");
         then.status(200)
             .header("content-type", "application/json")
             .json_body(json!({
