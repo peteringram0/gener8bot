@@ -1,35 +1,28 @@
-use std::{thread::sleep};
 use std::time::Duration;
 
 use colored::*;
+use tokio::time::sleep;
 use crate::product::{self};
-use crate::{settings::Settings, me::Me};
+use crate::{settings::Settings};
 
-pub async fn snipe(settings: &Settings, me: &Me) {
+pub async fn snipe(settings: &Settings) {
 
   // Check the products last price before sniping
   let product_latest = product::get(settings).await;
-  if product_latest.is_err() {
-    panic!("Could not update the product before sniping")
-  }
-  let product_unwrapped = product_latest.unwrap();
 
-  let snipe_time = product_unwrapped.seconds_until_finishes();
+  let snipe_time = product_latest.seconds_until_finishes();
 
   println!("{} {} {}", "Will post bid in".red(), snipe_time.to_string().red().bold(), "seconds".red());
-  sleep(Duration::from_secs(snipe_time));
+  sleep(Duration::from_secs(snipe_time)).await;
 
   // Run the snipe
-  let bid = product::post_bid(&product_unwrapped, settings).await;
-  if bid.is_err() {
-    panic!("Could not snipe")
-  }
+  product::post_bid(&product_latest, settings).await;
 
 }
 
 #[cfg(test)]
 mod tests {
-  use chrono::{Utc};
+  use chrono::{Utc, Duration};
   use httpmock::prelude::*;
   use serde_json::json;
   use super::*;
@@ -39,7 +32,7 @@ mod tests {
 
     let server = MockServer::start();
 
-    let re_get_product = server.mock(|when, then| {
+    let get_product = server.mock(|when, then| {
       when.method(GET);
       then.status(200)
         .header("content-type", "application/json")
@@ -49,7 +42,7 @@ mod tests {
                 "active-users": 0,
                 "bids-made": 0,
                 "current-price": 170,
-                "ends-at": Utc::now().to_rfc3339(),
+                "ends-at": (Utc::now() + Duration::seconds(4)).to_rfc3339(),
                 "is-active": true,
                 "is-complete": false,
                 "starts-at": "2022-09-15T19:51:49+00:00"
@@ -58,7 +51,7 @@ mod tests {
           }));
     });
 
-    let post_bid = server.mock(|when, then| {
+    let post_product_bid = server.mock(|when, then| {
       when.method(POST)
         .path("/marketplace/auctions/bids");
       then.status(200)
@@ -66,14 +59,11 @@ mod tests {
     });
 
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
-    let me = Me {balance: 200};
 
-    snipe(&settings, &me).await;
+    snipe(&settings).await;
 
-    re_get_product.assert();
-    post_bid.assert();
-
-    // TODO: bid should be 172 .. how to check this in the payload?
+    get_product.assert();
+    post_product_bid.assert();
 
   }
 

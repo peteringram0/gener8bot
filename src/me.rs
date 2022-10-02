@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::{settings::Settings, product::Product};
+use colored::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct MeAttributes {
@@ -29,13 +30,29 @@ impl Me {
   }
 }
 
-pub async fn get(settings: &Settings) -> Result<Me, reqwest::Error> {
-  let client: MeResponse = reqwest::Client::new()
+pub async fn get(settings: &Settings) -> Me {
+  let response = reqwest::Client::new()
     .get(settings.url.to_owned() + "/tokens/summary")
     .bearer_auth(&settings.token)
     .send()
-    .await?
-    .json()
-    .await?;
-  Ok(Me{balance: client.data.attributes.balance})
+    .await
+    .unwrap();
+
+    match response.status() {
+      reqwest::StatusCode::OK => {
+        return match response.json::<MeResponse>().await {
+          Ok(parsed) => {
+            println!("{} {} {}", "You currently have".to_string().purple(), parsed.data.attributes.balance.to_string().purple().bold(), "points".to_string().purple());
+            Me{balance: parsed.data.attributes.balance}
+          },
+          Err(_) => {
+            println!("Hm, the response didn't match the shape we expected.");
+            panic!("couldnt get me");
+          },
+        };
+      }
+      other => {
+        panic!("Uh oh! Something unexpected happened: {:?}", other);
+      }
+    }
 }

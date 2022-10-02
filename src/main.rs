@@ -3,10 +3,12 @@ mod settings;
 mod me;
 mod snipe;
 
-use std::{thread::sleep, time::Duration};
-
+use tokio::{task};
+use std::{time::Duration};
+use colored::*;
 use clap::Parser;
 use settings::Settings;
+use tokio::time::sleep;
 
 // Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -21,58 +23,81 @@ struct Args {
    product_id: String,
 }
 
+#[derive(PartialEq)]
+enum WatchResult {
+  LOOP,
+  SNIPE
+}
+
 fn main() {
   let args = Args::parse();
   let settings = settings::Settings::new("https://apollo.gener8ads.com".to_string(), args.token, args.product_id);
-  watch_product(&settings)
+  main_inner(settings)
+}
+
+#[tokio::main]
+async fn main_inner(settings: Settings) {
+  let forever = task::spawn({
+    async move {
+      loop {
+        let res = watch_product(&settings).await;
+        if res == WatchResult::SNIPE {
+          break;
+        }
+        sleep(Duration::from_secs(60)).await;
+      }
+    }
+  });
+  forever.await.unwrap();
+  println!("{}", "Auction finished. I hope you won the product".to_string().red().bold());
 }
 
 /**
  * Every 10 seconds we will re get us, and the product to make sure we still have enough points.
  * 10 mins before the auction ends we will setup our snipe
  */
-#[tokio::main]
-async fn watch_product(settings: &Settings) {
+async fn watch_product(settings: &Settings) -> WatchResult {
 
   let me = me::get(&settings).await;
-  if me.is_err() {
-    panic!("couldnt get me");
-  }
-  let me = me.unwrap();
-
   let product = product::get(&settings).await;
-  if product.is_err() {
-    panic!("couldnt get product");
-  }
-  let product = product.unwrap();
-  // println!("{:?}", product);
 
-  if !product.is_active {
-    panic!("Product is not active")
-  }
+  product.is_not_active(); // make sure the product is active
+  product.has_finished(); // make sure the action has not changed
+  me.can_afford_product(&product); // make sure we can still afford the product
 
-  // Check we can afford the product
-  me.can_afford_product(&product);
-
-  if product.seconds_until_finishes() >= 600 { // 10 mins
-    // sleep(Duration::from_secs(600));
-    return watch_product(settings) // TODO: This errors here !!
+  if product.seconds_until_finishes() > 60 { // 1 min
+    println!("{}", "Over 60 seconds until auction finishes ... will keep watching the product! ...".to_string().red());
+    return WatchResult::LOOP
   }
 
-  snipe::snipe(&settings, &me).await // TODO: Maybe this will work without putting inside a task .... need a way to check
+  snipe::snipe(&settings).await;
+  WatchResult::SNIPE
 
 }
+
+/**
+ * running 1 test
+You currently have 200 points
+Current product price: 170 points
+Over 60 seconds until auction finishes ... will keep watching the product! ...
+test tests::main_test has been running for over 60 seconds
+You currently have 200 points
+Current product price: 170 points
+Current product price: 170 points
+Will post bid in 59 seconds
+Bid made for:  171 points
+ */
 
 #[cfg(test)]
 mod tests {
   use chrono::{Utc, Duration};
   use httpmock::prelude::*;
   use serde_json::json;
-  use crate::{settings::Settings, me::Me};
+  use crate::{settings::Settings};
   use super::*;
 
-  #[test]
-  fn watch_product_test() {
+  #[tokio::test]
+  async fn watch_product_test_over_2_mins() {
 
     let server = MockServer::start();
 
@@ -87,7 +112,7 @@ mod tests {
                 "active-users": 0,
                 "bids-made": 0,
                 "current-price": 170,
-                "ends-at": (Utc::now() + Duration::minutes(11)).to_rfc3339(),
+                "ends-at": (Utc::now() + Duration::minutes(2)).to_rfc3339(),
                 "is-active": true,
                 "is-complete": false,
                 "starts-at": "2022-09-15T19:51:49+00:00"
@@ -119,10 +144,65 @@ mod tests {
 
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
 
-    watch_product(&settings);
+    watch_product(&settings).await;
 
     get_me.assert();
     get_product.assert();
+    post_bid.assert_hits(0)
+
+  }
+
+  #[test]
+  fn main_test() {
+    let server = MockServer::start();
+
+    let get_product = server.mock(|when, then| {
+      when.method(GET)
+        .path("/marketplace/auctions/product");
+      then.status(200)
+        .header("content-type", "application/json")
+          .json_body(json!({
+            "data": {
+              "attributes": {
+                "active-users": 0,
+                "bids-made": 0,
+                "current-price": 170,
+                "ends-at": (Utc::now() + Duration::minutes(2)).to_rfc3339(),
+                "is-active": true,
+                "is-complete": false,
+                "starts-at": "2022-09-15T19:51:49+00:00"
+              }
+            }
+          }));
+    });
+
+    let get_me = server.mock(|when, then| {
+      when.method(GET)
+        .path("/tokens/summary");
+      then.status(200)
+        .header("content-type", "application/json")
+          .json_body(json!({
+            "data": {
+              "attributes": {
+                "balance": 200,
+              }
+            }
+          }));
+    });
+
+    let post_bid = server.mock(|when, then| {
+      when.method(POST)
+        .path("/marketplace/auctions/bids");
+      then.status(200)
+        .header("content-type", "application/json");
+    });
+
+    let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
+    main_inner(settings);
+
+    get_product.assert_hits(3);
+    get_me.assert_hits(2);
+    post_bid.assert_hits(1);
 
   }
 
