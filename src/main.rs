@@ -25,8 +25,8 @@ struct Args {
 
 #[derive(PartialEq)]
 enum WatchResult {
-  LOOP,
-  SNIPE
+  Loop,
+  Snipe
 }
 
 fn main() {
@@ -41,7 +41,7 @@ async fn main_inner(settings: Settings) {
     async move {
       loop {
         let res = watch_product(&settings).await;
-        if res == WatchResult::SNIPE {
+        if res == WatchResult::Snipe {
           break;
         }
         sleep(Duration::from_secs(60)).await;
@@ -58,8 +58,8 @@ async fn main_inner(settings: Settings) {
  */
 async fn watch_product(settings: &Settings) -> WatchResult {
 
-  let me = me::get(&settings).await;
-  let product = product::get(&settings).await;
+  let me = me::get(settings).await;
+  let product = product::get(settings).await;
 
   product.is_not_active(); // make sure the product is active
   product.has_finished(); // make sure the action has not changed
@@ -67,11 +67,11 @@ async fn watch_product(settings: &Settings) -> WatchResult {
 
   if product.seconds_until_finishes() > 60 { // 1 min
     println!("{}", "Over 60 seconds until auction finishes ... will keep watching the product! ...".to_string().red());
-    return WatchResult::LOOP
+    return WatchResult::Loop
   }
 
-  snipe::snipe(&settings).await;
-  WatchResult::SNIPE
+  snipe::snipe(settings).await;
+  WatchResult::Snipe
 
 }
 

@@ -78,7 +78,7 @@ pub async fn get(settings: &Settings) -> Product {
 
     match response.status() {
       reqwest::StatusCode::OK => {
-        return match response.json::<AuctionProductResponse>().await {
+        match response.json::<AuctionProductResponse>().await {
           Ok(parsed) => {
             let p = Product {
               current_price: parsed.data.attributes.current_price,
@@ -93,7 +93,7 @@ pub async fn get(settings: &Settings) -> Product {
             println!("Hm, the response didn't match the shape we expected.");
             panic!("couldnt get product");
           },
-        };
+        }
       }
       other => {
         panic!("Uh oh! Something unexpected happened: {:?}", other);
@@ -177,9 +177,9 @@ mod tests {
 
     // Create a mock on the server.
     let bid_response = server.mock(|when, then| {
-        when.method(POST)
-          .path("/marketplace/auctions/bids");
-        then.status(200);
+      when.method(POST)
+        .path("/marketplace/auctions/bids");
+      then.status(200);
     });
 
     let settings = Settings::new(server.base_url(), "token".to_string(), "product".to_string());
@@ -190,7 +190,7 @@ mod tests {
       is_complete: false
     };
 
-    let _ = post_bid(&product, &settings).await;
+    post_bid(&product, &settings).await;
 
     bid_response.assert();
 

@@ -40,7 +40,7 @@ pub async fn get(settings: &Settings) -> Me {
 
     match response.status() {
       reqwest::StatusCode::OK => {
-        return match response.json::<MeResponse>().await {
+        match response.json::<MeResponse>().await {
           Ok(parsed) => {
             println!("{} {} {}", "You currently have".to_string().purple(), parsed.data.attributes.balance.to_string().purple().bold(), "points".to_string().purple());
             Me{balance: parsed.data.attributes.balance}
@@ -49,7 +49,7 @@ pub async fn get(settings: &Settings) -> Me {
             println!("Hm, the response didn't match the shape we expected.");
             panic!("couldnt get me");
           },
-        };
+        }
       }
       other => {
         panic!("Uh oh! Something unexpected happened: {:?}", other);
