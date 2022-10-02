@@ -75,19 +75,6 @@ async fn watch_product(settings: &Settings) -> WatchResult {
 
 }
 
-/**
- * running 1 test
-You currently have 200 points
-Current product price: 170 points
-Over 60 seconds until auction finishes ... will keep watching the product! ...
-test tests::main_test has been running for over 60 seconds
-You currently have 200 points
-Current product price: 170 points
-Current product price: 170 points
-Will post bid in 59 seconds
-Bid made for:  171 points
- */
-
 #[cfg(test)]
 mod tests {
   use chrono::{Utc, Duration};
